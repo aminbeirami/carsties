@@ -1,4 +1,6 @@
+using AuctionService;
 using AuctionService.Data;
+using Contracts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +21,10 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // we don't need authentication to message bus at this point
 builder.Services.AddMassTransit(x=>
 {
+    // define the consumer namespace. any other consumer we create under the same namespace will be registered automatically
+    x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
+    // modifying the default name formatting of the Consumers
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("Auction",false));
     // adding the outbox for Auction Db and if there is any message in outbox, every 10 seconds it will check and try to deliver it to service bus
     x.AddEntityFrameworkOutbox<AuctionDbContext>(o=>{
         o.QueryDelay = TimeSpan.FromSeconds(10);
