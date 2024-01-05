@@ -1,10 +1,10 @@
-﻿using System.IO.Compression;
-using AuctionService.Data;
+﻿using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuctionService.Controllers;
@@ -15,10 +15,12 @@ public class AuctionController : ControllerBase // Controller base is a base cla
 {
     private readonly AuctionDbContext _context;
     private readonly IMapper _mapper;
-    public AuctionController(AuctionDbContext context,IMapper mapper)
+    private readonly IPublishEndpoint _publishEndPoint;
+    public AuctionController(AuctionDbContext context,IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _context = context;
         _mapper = mapper;
+        _publishEndPoint = publishEndpoint;
     }
 
     [HttpGet]
@@ -50,12 +52,17 @@ public class AuctionController : ControllerBase // Controller base is a base cla
         //ToDo.. Add current user as seller
         auction.Seller = "Test";
         _context.Auctions.Add(auction);
+
+        // deliver the request to rabbitMQ
+        // if it fail, it will be stored in outbox in postgres
+        var newAuction = _mapper.Map<AuctionDto>(auction);
+        await _publishEndPoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
         var result = await _context.SaveChangesAsync() > 0; // save changes async will return an integer. in case of failure it returns 0
         if(!result) return BadRequest("Could not write to DB");
         // we should create 201 response which CreatedAtAction does it. we need to reuse GetAuctionById and we pass the Id. and we also pass the auctionDto as a pattern that response should look like
         return CreatedAtAction(nameof(GetAuctionById), 
-            new {auction.Id},_mapper.Map<AuctionDto>(auction));
-
+            new {auction.Id},newAuction);
     }
 
     [HttpPut("{Id}")]

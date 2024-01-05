@@ -1,4 +1,5 @@
 using AuctionService.Data;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,14 +15,29 @@ builder.Services.AddDbContext<AuctionDbContext>(opt =>
 // the argument passed in AddAutoMapper provides the location of the assembly that this application is running in and looks for any classes that drives from Profile 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+// adding mass transit for rabbitMQ communication
+// we don't need authentication to message bus at this point
+builder.Services.AddMassTransit(x=>
+{
+    // adding the outbox for Auction Db and if there is any message in outbox, every 10 seconds it will check and try to deliver it to service bus
+    x.AddEntityFrameworkOutbox<AuctionDbContext>(o=>{
+        o.QueryDelay = TimeSpan.FromSeconds(10);
+        // we want to use postgres. 
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+    x.UsingRabbitMq((context,cfg)=>
+    {
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseAuthorization();
 
 app.MapControllers();
-
-
 
 // Seed data in our db
 try
