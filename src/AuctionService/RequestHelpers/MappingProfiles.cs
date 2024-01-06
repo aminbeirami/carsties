@@ -15,6 +15,10 @@ public class MappingProfiles : Profile
             .ForMember(d => d.Item, o => o.MapFrom(s => s));
         CreateMap<CreateAuctionDto, Item>();
         // added for message bus.
-        CreateMap<AuctionDto,AuctionCreated>(); 
+        CreateMap<AuctionDto,AuctionCreated>();
+        // inclde item because we are updating item properties as well
+        CreateMap<Auction, AuctionUpdated>().IncludeMembers(a => a.Item);
+        CreateMap<Item, AuctionUpdated>();
+        
     }
 }

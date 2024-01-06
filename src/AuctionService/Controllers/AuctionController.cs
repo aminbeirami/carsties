@@ -80,6 +80,10 @@ public class AuctionController : ControllerBase // Controller base is a base cla
         auction.Item.Color = updateAuctionDto.Color ?? auction.Item.Color;
         auction.Item.Mileage = updateAuctionDto.Mileage ?? auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
+        
+        // publish the updated message to rabbitMQ
+        // we don't need to map it to Auction Dto
+        await _publishEndPoint.Publish(_mapper.Map<AuctionUpdated>(auction));
 
         var result = await _context.SaveChangesAsync() > 0;
         if(result) return Ok();
@@ -91,7 +95,11 @@ public class AuctionController : ControllerBase // Controller base is a base cla
         var auction = await _context.Auctions.FindAsync(id);
         if(auction == null) return NotFound();
         // To Do -- Check the Seller == username
+
         _context.Auctions.Remove(auction);
+        //publish to rabbitMQ
+        // in Contract project, we are expecting Id as a string value so we should convert the GUID value to sting
+        await _publishEndPoint.Publish<AuctionDeleted>(new {Id = auction.Id.ToString()});
 
         var result = await _context.SaveChangesAsync() > 0;
         if(!result) return BadRequest("Could not update DB");

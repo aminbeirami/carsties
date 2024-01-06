@@ -23,6 +23,7 @@ builder.Services.AddMassTransit(x=>
 {
     // define the consumer namespace. any other consumer we create under the same namespace will be registered automatically
     x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
+    x.AddConsumersFromNamespaceContaining<AuctionUpdatedFaultConsumer>();
     // modifying the default name formatting of the Consumers
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("Auction",false));
     // adding the outbox for Auction Db and if there is any message in outbox, every 10 seconds it will check and try to deliver it to service bus

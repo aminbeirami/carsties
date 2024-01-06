@@ -16,6 +16,8 @@ builder.Services.AddMassTransit(x=>
 {
     // define the consumer namespace. any other consumer we create under the same namespace will be registered automatically
     x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
+    x.AddConsumersFromNamespaceContaining<AuctionUpdatedConsumer>();
+    x.AddConsumersFromNamespaceContaining<AuctionDeletedConsumer>();
     // I don't like default formatting of our names for consumers
     // because if we create another consumer with the same name in a different service, then each time I need to add extra names before the class name to be different from other services class name
     // to use a prefix that will be added in front of the queue name
