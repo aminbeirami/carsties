@@ -36,6 +36,11 @@ internal static class HostingExtensions
             .AddInMemoryApiScopes(Config.ApiScopes)
             .AddInMemoryClients(Config.Clients)
             .AddAspNetIdentity<ApplicationUser>();
+
+            // We are running identity server over http, then we need to add a small change to our cookie configurations
+        builder.Services.ConfigureApplicationCookie(options =>{
+            options.Cookie.SameSite = SameSiteMode.Lax;
+        });
         
         // we won't use Google authentication so comment it out.
         // builder.Services.AddAuthentication()

@@ -22,13 +22,9 @@ try
 
     // this seeding is only for the template to bootstrap the DB and users.
     // in production you will likely want a different approach.
-    if (args.Contains("/seed"))
-    {
-        Log.Information("Seeding database...");
-        SeedData.EnsureSeedData(app);
-        Log.Information("Done seeding database. Exiting.");
-        return;
-    }
+    // I override the way we seed the data. I will call seeding data directly so it will happen on each application run
+    // if DB has already been seeded, then EnsureSeedData will not seed the db
+    SeedData.EnsureSeedData(app);
 
     app.Run();
 }
